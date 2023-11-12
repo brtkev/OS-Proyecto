@@ -1,12 +1,19 @@
-CFLAG = -Wno-implicit-function-declaration
-src_file = *.c
-obj_file = $(patsubst %.c, %.o, $(src_file))
+APPFILES= app/*.c
+DBFILES= database/*.c
+OBJFILES= *.o *.exe
+CFLAG = -luser32 -Wno-implicit-function-declaration
 
-all: app.exe
+app: app.exe
+	echo "make app.exe"
 
-app.exe: $(src_file)
-	gcc $(CFLAG) -o $@ $(src_file)
+app.exe: $(APPFILES)
+	gcc $(CFLAG) -o $@ $(APPFILES)
 
+db: database.exe
+	echo "make database.exe"
+
+database.exe: $(DBFILES)
+	gcc $(CFLAG) -o $@ $(DBFILES)
 
 clean:
-	rm -rf $(obj_file) *.exe
+	rm -rf $(OBJFILES)
