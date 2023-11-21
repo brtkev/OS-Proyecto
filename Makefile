@@ -1,5 +1,5 @@
 APPFILES= app/*.c
-DBFILES= database/*.c
+EJ_1_FILES= ejercicio_1/*.c
 OBJFILES= *.o *.exe
 CFLAG = -luser32 -Wno-implicit-function-declaration
 
@@ -9,11 +9,11 @@ app: app.exe
 app.exe: $(APPFILES)
 	gcc $(CFLAG) -o $@ $(APPFILES)
 
-db: database.exe
-	echo "make database.exe"
+1: 1.exe
+	echo "make 1.exe"
 
-database.exe: $(DBFILES)
-	gcc $(CFLAG) -o $@ $(DBFILES)
+1.exe: $(EJ_1_FILES)
+	gcc $(CFLAG) -o $@ $(EJ_1_FILES)
 
 clean:
 	rm -rf $(OBJFILES)
