@@ -33,6 +33,9 @@ void reader_lock()
     // Wait for the writer semaphore to be signaled.
     WaitForSingleObject(writer_semaphore, INFINITE);
 
+    //wait for admin
+    WaitForSingleObject(admin_semaphore, INFINITE);
+
     printf("READER - CRITICAL SECTION\n");
 }
 
@@ -41,6 +44,7 @@ void reader_unlock()
 {
     num_readers--;
     printf("READER - CRITICAL SECTION FIN\n");
+    ReleaseSemaphore(admin_semaphore, 1, NULL);
     ReleaseSemaphore(writer_semaphore, 1, NULL);
 }
 
@@ -50,7 +54,7 @@ void writer_lock()
     printf("WRITER - new writer\n");
     // Wait for the writer semaphore to be signaled.
     WaitForSingleObject(writer_semaphore, INFINITE);
-
+    WaitForSingleObject(admin_semaphore, INFINITE);
     printf("WRITER - Critic section\n");
 }
 
@@ -59,6 +63,7 @@ void writer_unlock()
 {
     printf("WRITER - Critic section FIN\n");
     // Signal the writer semaphore.
+    ReleaseSemaphore(admin_semaphore, 1, NULL);
     ReleaseSemaphore(writer_semaphore, 1, NULL);
 }
 
