@@ -19,6 +19,8 @@ Para compilar y ejecutar el ejercicio 1, debemos ejecutar en el terminal los sig
 dentro del archivo [Makefile](./Makefile) encontraremos 2 funciones
 
 ```make
+EJ_1_FILES= ejercicio_1/*.c
+...
 1: 1.exe
 	echo "make 1.exe"
 
