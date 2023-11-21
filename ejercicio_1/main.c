@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include "lock.h"
-#include <pthread.h>
 #include <windows.h>
 
 #define THREADCOUNT 30

@@ -1,8 +1,7 @@
 #include <windows.h>
 #include <stdio.h>
 
-// Create two semaphores: one for readers and one for writers.
-HANDLE reader_semaphore;
+// Create two semaphores: one for admins and one for writers.
 HANDLE writer_semaphore;
 HANDLE admin_semaphore;
 int num_readers = 0;
@@ -10,7 +9,6 @@ int num_readers = 0;
 void start_locks(){
     // Initialize the semaphores.
     printf("SET - Initialize the semaphores\n");
-    reader_semaphore = CreateSemaphore(NULL, 1, 1, NULL);
     writer_semaphore = CreateSemaphore(NULL, 1, 1, NULL);
     admin_semaphore = CreateSemaphore(NULL, 1, 1, NULL);
 }
@@ -18,7 +16,6 @@ void start_locks(){
 void destroy_locks(){
     // Destroy the semaphores
     printf("SET - destroy the semaphores\n");
-    CloseHandle(reader_semaphore);
     CloseHandle(writer_semaphore);
     CloseHandle(admin_semaphore);
 }
