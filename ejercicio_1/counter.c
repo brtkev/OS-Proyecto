@@ -16,6 +16,7 @@ int get_count(int type, int hour, int day){
     return counter[day][hour][type];
 }
 
+//todas las operaciones
 int get_full_count(){
     int accumulator = 0;
     for(int day = 0; day < MAX_DAYS; ++day){
@@ -28,6 +29,7 @@ int get_full_count(){
     return accumulator;
 }
 
+//todas las operaciones por hora ( desde 0 hasta 23 horas)
 int get_full_count_by_hour(int hour){
     int accumulator = 0;
 
@@ -40,6 +42,7 @@ int get_full_count_by_hour(int hour){
     return accumulator;
 }
 
+//todas las operaciones por tipo ( Reader, Writer, Admin)
 int get_full_count_by_type(int type){
     int accumulator = 0;
 
@@ -52,6 +55,7 @@ int get_full_count_by_type(int type){
     return accumulator;
 }
 
+//todas las operaciones por tipo y dia
 int get_count_by_type_and_day(int type, int day){
     int accumulator = 0;
 
@@ -62,7 +66,7 @@ int get_count_by_type_and_day(int type, int day){
     return accumulator;
 }
 
-
+//interface
 void show_counters(){
     printf("1. numero total de operaciones : %d\n", get_full_count());
 
@@ -76,7 +80,7 @@ void show_counters(){
         printf("    Hora %d:00, operaciones: %d\n", hour+1, get_full_count_by_hour(hour));
     }
 
-    printf("4. numero total de operaciones por tipo, por dia\n");
+    printf("4. numero total de operaciones por tipo y por dia\n");
     for( int day = 0; day < MAX_DAYS; ++day){
         printf("    dia %d:\n", day);
         printf("        operaciones por reader: %d\n", get_count_by_type_and_day(READER_TYPE, day));

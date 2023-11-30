@@ -91,3 +91,4 @@ En este caso declaramos 2 semaforos, admin con 1 recurso y writer ( escritor ) c
 ### implementacion de los contadores
 
 ### implementacion de el logger
+https://www.ozzu.com/wiki/504927/writing-a-custom-printf-wrapper-function-in-c

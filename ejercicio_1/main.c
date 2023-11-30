@@ -1,44 +1,45 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <windows.h>
+
 #include "lock.h"
 #include "counter.h"
 #include "logger.h"
 
-#define THREAD_COUNT 17
-
+int thread_count;
 DWORD WINAPI reader_function(DWORD i)
 {
-    
+
     reader_lock();
     console_log(0, "CRITIAL SECTION - Reader Function\n");
     reader_unlock();
-    
 }
 
 DWORD WINAPI writer_function(DWORD i)
 {
-    
+
     writer_lock();
-    console_log(0 ,"CRITIAL SECTION - writer Function\n");
+    console_log(0, "CRITIAL SECTION - writer Function\n");
     writer_unlock();
-    
 }
 
 DWORD WINAPI admin_function(DWORD i)
 {
-    
+
     admin_lock();
-    console_log(0 ,"CRITIAL SECTION - admin Function\n");
+    console_log(0, "CRITIAL SECTION - admin Function\n");
     admin_unlock();
 }
 
 void process_runner(int hour, int day)
 {
-    HANDLE threads[THREAD_COUNT];
+    //https://codeforwin.org/c-programming/how-to-find-first-and-last-digit-of-any-number
+    int thread_count = rand() % 10;
+    HANDLE threads[thread_count];
     DWORD i;
 
-    for (i = 0; i < THREAD_COUNT; i++)
+    for (i = 0; i < thread_count; i++)
     {
         DWORD thread_id;
         if (i % 3 == 0)
@@ -62,7 +63,7 @@ void process_runner(int hour, int day)
         if (threads[i] == NULL)
 
         {
-            console_log(0 ,"LCreateThread() failed, error %u\n", GetLastError());
+            console_log(0, "LCreateThread() failed, error %u\n", GetLastError());
 
             ExitProcess(1);
 
@@ -70,7 +71,7 @@ void process_runner(int hour, int day)
         }
         // else printf("LCreateThread() is OK, thread ID %u\n", thread_id);
     }
-    WaitForMultipleObjects(THREAD_COUNT, threads, TRUE, INFINITE);
+    WaitForMultipleObjects(thread_count, threads, TRUE, INFINITE);
 }
 
 void hour_runner(int day)
@@ -86,15 +87,17 @@ void daily_runner()
 {
     for (int day = 0; day < MAX_DAYS; ++day)
     {
-        console_log(0 ,"\nSTART - day %d\n\n", day + 1);
+        console_log(0, "\nSTART - day %d\n\n", day + 1);
         hour_runner(day);
     }
 }
 
-
-
 int main(int argc, int *argv[])
 {
+    //semilla de numeros random
+    time_t t1;
+    srand ( (unsigned) time (&t1));
+    
     printf("You have entered %d arguments:\n", argc - 1);
 
     printf("opciones validas (0 o 1, todas estan en 0 por defecto).\n");
@@ -105,20 +108,24 @@ int main(int argc, int *argv[])
     char *output; // es necesario pasarlo como argumento, pero no se usa
     long argument;
 
-    for (int i = 0; i < argc; i++) {
-        if( i == 1){
+    for (int i = 0; i < argc; i++)
+    {
+        if (i == 1)
+        {
             argument = strtol((char *)argv[i], &output, 10);
-            printf("argumento 1: %d\n", argument);        
+            printf("argumento 1: %d\n", argument);
             set_skip_logs(argument);
-
-        }else if( i == 2 ){
+        }
+        else if (i == 2)
+        {
             argument = strtol((char *)argv[i], &output, 10);
-            printf("argumento 2: %d\n", argument);        
+            printf("argumento 2: %d\n", argument);
             set_hide_logs(argument);
-
-        }else if( i == 3 ){
+        }
+        else if (i == 3)
+        {
             argument = strtol((char *)argv[i], &output, 10);
-            printf("argumento 3: %d\n", argument);        
+            printf("argumento 3: %d\n", argument);
             set_use_file(argument);
         }
         // printf("%s\n", argv[i]);
@@ -126,11 +133,11 @@ int main(int argc, int *argv[])
 
     printf("\nPresione Enter para empezar.");
     scanf("%c", &output);
-    
+
     // Initialize the semaphores.
     start_locks();
-    
-    //corre todo
+
+    // corre todo
     daily_runner();
 
     // Destroy the semaphores
