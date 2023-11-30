@@ -88,4 +88,6 @@ HANDLE es una varible utilizada por windows.h, esta variable puede ser usada par
 
 En este caso declaramos 2 semaforos, admin con 1 recurso y writer ( escritor ) con 1 recurso 
 
-###
+### implementacion de los contadores
+
+### implementacion de el logger

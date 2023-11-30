@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <stdio.h>
+#include "logger.h"
 
 // Create two semaphores: one for admins and one for writers.
 HANDLE writer_semaphore;
@@ -25,7 +26,8 @@ void reader_lock()
 {
     // Increment the number of readers.
     num_readers++;
-    printf("READER - new reader, current number of readers: %d\n", num_readers);
+    console_log(1, "READER - new reader, current number of readers: %d\n",   num_readers);
+    // printf("READER - new reader, current number of readers: %d\n", num_readers);
 
     // Wait for the writer semaphore to be signaled.
     WaitForSingleObject(writer_semaphore, INFINITE);
@@ -33,14 +35,16 @@ void reader_lock()
     //wait for admin
     WaitForSingleObject(admin_semaphore, INFINITE);
 
-    printf("READER - CRITICAL SECTION\n");
+    console_log(1,"READER - CRITICAL SECTION\n");
+    // printf("READER - CRITICAL SECTION\n");
 }
 
 // Reader unlock
 void reader_unlock()
 {
     num_readers--;
-    printf("READER - CRITICAL SECTION FIN\n");
+    console_log(1, "READER - CRITICAL SECTION FIN\n");
+    // printf("READER - CRITICAL SECTION FIN\n");
     ReleaseSemaphore(admin_semaphore, 1, NULL);
     ReleaseSemaphore(writer_semaphore, 1, NULL);
 }
@@ -48,17 +52,20 @@ void reader_unlock()
 // Writer lock
 void writer_lock()
 {
-    printf("WRITER - new writer\n");
+    console_log(1, "WRITER - new writer\n");
+    // printf("WRITER - new writer\n");
     // Wait for the writer semaphore to be signaled.
     WaitForSingleObject(writer_semaphore, INFINITE);
     WaitForSingleObject(admin_semaphore, INFINITE);
-    printf("WRITER - Critic section\n");
+    console_log(1, "WRITER - Critic section\n");
+    // printf("WRITER - Critic section\n");
 }
 
 // Writer unlock
 void writer_unlock()
 {
-    printf("WRITER - Critic section FIN\n");
+    console_log(1, "WRITER - Critic section FIN\n");
+    // printf("WRITER - Critic section FIN\n");
     // Signal the writer semaphore.
     ReleaseSemaphore(admin_semaphore, 1, NULL);
     ReleaseSemaphore(writer_semaphore, 1, NULL);
@@ -66,17 +73,19 @@ void writer_unlock()
 
 void admin_lock(){
     //wait for admin
-    printf("ADMIN - new admin\n");
+    console_log(1, "ADMIN - new admin\n");
+    // printf("ADMIN - new admin\n");
     // Wait for the writer semaphore to be signaled.
     WaitForSingleObject(admin_semaphore, INFINITE);
 
-    printf("ADMIN - CRITICAL SECTION\n");
+    // printf("ADMIN - CRITICAL SECTION\n");
 
 }
 
 void admin_unlock(){
     //release admin
-    printf("ADMIN - CRITICAL SECTION FIN\n");
+    console_log(1 ,"ADMIN - CRITICAL SECTION FIN\n");
+    // printf("ADMIN - CRITICAL SECTION FIN\n");
     // Signal the writer semaphore.
     ReleaseSemaphore(admin_semaphore, 1, NULL);
 }

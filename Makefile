@@ -17,3 +17,4 @@ app.exe: $(APPFILES)
 
 clean:
 	rm -rf $(OBJFILES)
+	rm -rf *.log
