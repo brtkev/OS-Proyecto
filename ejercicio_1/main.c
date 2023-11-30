@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <windows.h>
 #include "lock.h"
 #include "counter.h"
@@ -92,13 +93,40 @@ void daily_runner()
 
 
 
-int main()
+int main(int argc, int *argv[])
 {
+    printf("You have entered %d arguments:\n", argc - 1);
 
-    set_skip_logs(1);
-    set_hide_logs(1);
-    set_use_file(1);
+    printf("opciones validas (0 o 1, todas estan en 0 por defecto).\n");
+    printf("Argumento 1, skip logs\nSalta todos los pasos de los hilos y muestra el resultado directamente.\n");
+    printf("Argumento 2, hide logs\nOculta cada paso de los hilos, solo muestra las Secciones Criticas.\n");
+    printf("Argumento 3, use file\nEn vez de mostrar el proceso de los hilos por consola, los guarda en un archivo '1.log'.\n\n");
 
+    char *output; // es necesario pasarlo como argumento, pero no se usa
+    long argument;
+
+    for (int i = 0; i < argc; i++) {
+        if( i == 1){
+            argument = strtol((char *)argv[i], &output, 10);
+            printf("argumento 1: %d\n", argument);        
+            set_skip_logs(argument);
+
+        }else if( i == 2 ){
+            argument = strtol((char *)argv[i], &output, 10);
+            printf("argumento 2: %d\n", argument);        
+            set_hide_logs(argument);
+
+        }else if( i == 3 ){
+            argument = strtol((char *)argv[i], &output, 10);
+            printf("argumento 3: %d\n", argument);        
+            set_use_file(argument);
+        }
+        // printf("%s\n", argv[i]);
+    }
+
+    printf("\nPresione Enter para empezar.");
+    scanf("%c", &output);
+    
     // Initialize the semaphores.
     start_locks();
     
