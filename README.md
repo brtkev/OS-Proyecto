@@ -233,7 +233,7 @@ int get_count_by_type_and_day(int type, int day){
 * **get_full_count**: Retorna todas las operaciones.
 * **get_full_count_by_hour**: Retorna todas las operaciones por hora.
 * **get_full_count_by_type**: Retorna todas las operaciones por tipo.
-* **get_count_by_type_and_day**: Retorna la cuenta de cada tipo y cada día.
+* **get_count_by_type_and_day**: Retorna todas las operaciones por cada tipo y cada día.
 
 ```c
 void show_horas_pico()
@@ -313,9 +313,9 @@ void show_counter_by_type_and_day()
     }
 }
 ```
-* **show_horas_pico**: Imprime en pantalla los resultados de las horas pico por día.
-* **show_counter_by_type_and_day_and_hour**: Imprime en pantalla los resultados por tipo, día y hora.
-* **show_counters**: Imprime en pantalla los resultados de las funciones previamente comentadas.
+* **show_horas_pico**: Interfaz para mostrar los resultados por tipo, día, hora y las horas pico.
+* **show_counter_by_type_and_day_and_hour**: Imprime en pantalla los resultados por tipo, día, hora y las horas pico.
+* **show_counters**: Imprime en pantalla todos los tipos de operaciones.
 * **show_counter_by_type_and_day**: Imprime en pantalla los resultados por tipo y día.
 
 ### Implementación Del Logger
@@ -328,9 +328,9 @@ int use_file = 0;
 int skip_logs = 0;
 ```
 
-* **hide_logs**: Variable encargada de determinar si saltar los registros (se necesita que la variable *hiddeable se encuentre en 1*, ya que estas trabajan en conjunto).
+* **hide_logs**: Variable encargada de determinar si saltar la impresión en pantalla ciertos hilos (se necesita que la variable *hiddeable* se encuentre en 1, ya que estas trabajan en conjunto. Solo se muestran las secciones críticas de los hilos).
 * **use_file**: Variable encargada de determinar si el log se escribirá en un archivo.
-* **skip_logs**: Variable encargada de determinar si saltar los registros.
+* **skip_logs**: Variable encargada de determinar si saltar la impresión en pantalla de los hilos.
 
 ```c
 void console_log(  int hiddeable, char* format, ... ) {
