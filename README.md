@@ -129,19 +129,21 @@ void writer_unlock()
 * **writer_unlock**: Sale de la sección crítica y manda signal a los semáforos de escritor y admin.
 ```c
 void admin_lock(){
+    ++num_admins;
     console_log(1, "ADMIN - new admin\n");
     WaitForSingleObject(admin_semaphore, INFINITE);
 
 }
 
 void admin_unlock(){
+    --num_admins;
     console_log(1 ,"ADMIN - CRITICAL SECTION FIN\n");
     ReleaseSemaphore(admin_semaphore, 1, NULL);
 }
 ```
-* **admin_lock**: Coloca en wait el semáforo del admin y entra a la sección crítica
+* **admin_lock**: Aumenta el contador *num_admins*, coloca en wait el semáforo del admin y entra a la sección crítica
 
-* **admin_unlock**: Sale de la sección crítica y manda signal al semáforo del admin
+* **admin_unlock**: Decrementa el contador *num_admins*, sale de la sección crítica y manda signal al semáforo del admin
 
 ### Implementación De Los Contadores
 
@@ -393,4 +395,169 @@ int set_skip_logs( int status){
 * **set_variable**: Función encargada de asignar un estado ingresando a una variable y el estado el cual se desea asignar a la variable
 
 * **set_hide_logs/set_use_file/set_skip_logs**: Funciones encargadas de modificar el estado de las variables *hide_logs*, *use_file* y *skip_logs* respectivamente
+
+### Ejecución de main.c
+#### main.c
+
+```c
+int thread_count;
+DWORD WINAPI reader_function(DWORD i)
+{
+
+    reader_lock();
+    console_log(0, "CRITIAL SECTION - Reader Function\n");
+    reader_unlock();
+}
+
+DWORD WINAPI writer_function(DWORD i)
+{
+
+    writer_lock();
+    console_log(0, "CRITIAL SECTION - writer Function\n");
+    writer_unlock();
+}
+
+DWORD WINAPI admin_function(DWORD i)
+{
+
+    admin_lock();
+    console_log(0, "CRITIAL SECTION - admin Function\n");
+    admin_unlock();
+}
+```
+* **reader_function/writer_function/admin_function**: Cada una de estas funciones ejecuta su respectivo *lock*, un *console_log* para indicar que está en si sección crítica y finalmente se ejecuta su *unlock*.
+
+```c
+void process_runner(int hour, int day)
+{
+    int thread_count = rand() % 10;
+    HANDLE threads[thread_count];
+    DWORD i;
+
+    for (i = 0; i < thread_count; i++)
+    {
+        int thread_type = rand() % 10;
+        DWORD thread_id;
+        if (thread_type % 3 == 0)
+        {
+
+            count_up(ADMIN_TYPE, hour, day);
+            threads[i] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)admin_function, (PVOID)i, 0, &thread_id);
+        }
+        else if (thread_type % 2 == 0)
+        {
+
+            count_up(WRITER_TYPE, hour, day);
+            threads[i] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)writer_function, (PVOID)i, 0, &thread_id);
+        }
+        else
+        {
+            count_up(READER_TYPE, hour, day);
+            threads[i] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)reader_function, (PVOID)i, 0, &thread_id);
+        }
+
+        if (threads[i] == NULL)
+
+        {
+            console_log(0, "LCreateThread() failed, error %u\n", GetLastError());
+
+            ExitProcess(1);
+
+            return;
+        }
+    }
+    WaitForMultipleObjects(thread_count, threads, TRUE, INFINITE);
+}
+```
+
+* **process_runner**: Esta función comienza asignándole un número aleatorio a *thread_count*, nuestra variable para determinar el tamaño de nuestro arreglo de hilos en la variable *threads* y un iterador *i*.
+\
+    Adicionalmente se define otro número aleatorio a la variable *thread_type* y definimos una variable thread_id para ser pasada como un apuntador una vez vayamos creando cada uno de los hilos.
+    \
+    Los siguientes condicionales determinan si los hilos a crearse son para los casos de *admin* , *writer* o *reader*. En caso tal de que en nuestro arreglo de hilos exista una posición en la cual se encuentre en **NULL** se imprime el error. Finalmente esperamos a que los procesos correspondientes terminen.
+
+```c
+void hour_runner(int day)
+{
+    for (int hour = 0; hour < MAX_HOURS; ++hour)
+    {
+        console_log(0, "\nSTART - hour %d\n\n", hour + 1);
+        process_runner(hour, day);
+    }
+}
+
+void daily_runner()
+{
+    for (int day = 0; day < MAX_DAYS; ++day)
+    {
+        console_log(0, "\nSTART - day %d\n\n", day + 1);
+        hour_runner(day);
+    }
+}
+```
+
+* **hour_runner**: Función la cual iniciará los procesos por hora de cada uno de los días
+
+* **daily_runner**: Funcion la cual simulará el inicio cada uno de los días.
+
+```c
+int main(int argc, int *argv[])
+{
+    time_t t1;
+    srand ( (unsigned) time (&t1));
+    
+    printf("You have entered %d arguments:\n", argc - 1);
+
+    printf("opciones validas (0 o 1, todas estan en 0 por defecto).\n");
+    printf("Argumento 1, skip logs\nSalta todos los pasos de los hilos y muestra el resultado directamente.\n");
+    printf("Argumento 2, hide logs\nOculta cada paso de los hilos, solo muestra las Secciones Criticas.\n");
+    printf("Argumento 3, use file\nEn vez de mostrar el proceso de los hilos por consola, los guarda en un archivo '1.log'.\n\n");
+
+    char *output;
+    long argument;
+
+    for (int i = 0; i < argc; i++)
+    {
+        if (i == 1)
+        {
+            argument = strtol((char *)argv[i], &output, 10);
+            printf("argumento 1: %d\n", argument);
+            set_skip_logs(argument);
+        }
+        else if (i == 2)
+        {
+            argument = strtol((char *)argv[i], &output, 10);
+            printf("argumento 2: %d\n", argument);
+            set_hide_logs(argument);
+        }
+        else if (i == 3)
+        {
+            argument = strtol((char *)argv[i], &output, 10);
+            printf("argumento 3: %d\n", argument);
+            set_use_file(argument);
+        }
+    }
+
+    printf("\nPresione Enter para empezar.");
+    scanf("%c", &output);
+
+    start_locks();
+
+    daily_runner();
+
+    destroy_locks();
+
+    show_counters();
+
+    return 0;
+}
+```
+
+* **main**: Primeramente iniciamos la semilla para los números aleatorios. Posteriormente usamos la función *strtol* para tomar y convertir nuestro input a un tipo de dato *long*. Estos se imprimirán en pantalla dependiendo de cuántos argumentos hayamos escrito.
+\
+Ulteriormente se pide que el usuario presione enter para ejecutar las funciones *start_locks* y *daily_runner*. Una vez terminadas se ejecutaría *destroy_locks* y se mostraría en pantalla los contadores con la función *show_counters*
+    
+
+
+
 
