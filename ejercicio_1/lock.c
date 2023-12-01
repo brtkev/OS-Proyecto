@@ -6,6 +6,7 @@
 HANDLE writer_semaphore;
 HANDLE admin_semaphore;
 int num_readers = 0;
+int num_admins = 0;
 
 void start_locks(){
     // Initialize the semaphores.
@@ -27,7 +28,6 @@ void reader_lock()
     // Increment the number of readers.
     num_readers++;
     console_log(1, "READER - new reader, current number of readers: %d\n",   num_readers);
-    // printf("READER - new reader, current number of readers: %d\n", num_readers);
 
     // Wait for the writer semaphore to be signaled.
     WaitForSingleObject(writer_semaphore, INFINITE);
@@ -36,15 +36,13 @@ void reader_lock()
     WaitForSingleObject(admin_semaphore, INFINITE);
 
     console_log(1,"READER - CRITICAL SECTION\n");
-    // printf("READER - CRITICAL SECTION\n");
 }
 
 // Reader unlock
 void reader_unlock()
 {
     num_readers--;
-    console_log(1, "READER - CRITICAL SECTION FIN\n");
-    // printf("READER - CRITICAL SECTION FIN\n");
+    console_log(1, "READER - CRITICAL SECTION FIN, number of reader %d\n", num_readers);
     ReleaseSemaphore(admin_semaphore, 1, NULL);
     ReleaseSemaphore(writer_semaphore, 1, NULL);
 }
@@ -73,19 +71,20 @@ void writer_unlock()
 
 void admin_lock(){
     //wait for admin
-    console_log(1, "ADMIN - new admin\n");
-    // printf("ADMIN - new admin\n");
+    ++num_admins;
+    console_log(1, "ADMIN - new admin, number of admins %d\n", num_readers);
     // Wait for the writer semaphore to be signaled.
     WaitForSingleObject(admin_semaphore, INFINITE);
 
+    console_log(1, "ADMIN - CRITICAL SECTION\n");
     // printf("ADMIN - CRITICAL SECTION\n");
 
 }
 
 void admin_unlock(){
     //release admin
-    console_log(1 ,"ADMIN - CRITICAL SECTION FIN\n");
-    // printf("ADMIN - CRITICAL SECTION FIN\n");
+    --num_admins;
+    console_log(1 ,"ADMIN - CRITICAL SECTION FIN, number of admins %d\n", num_admins);
     // Signal the writer semaphore.
     ReleaseSemaphore(admin_semaphore, 1, NULL);
 }
