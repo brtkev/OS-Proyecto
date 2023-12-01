@@ -89,6 +89,10 @@ void show_horas_pico()
     printf("5. Horas pico por dia\n");
     for (int day = 0; day < MAX_DAYS; ++day)
     {
+        if(day != 0){
+            printf("Presione ENTER para continuar.");
+            scanf("%c", &opcional);
+        }
         printf("    dia %d\n", day + 1);
 
         printf("        tipo lector:\n");
