@@ -41,14 +41,15 @@ void process_runner(int hour, int day)
 
     for (i = 0; i < thread_count; i++)
     {
+        int thread_type = rand() % 10;
         DWORD thread_id;
-        if (i % 3 == 0)
+        if (thread_type % 3 == 0)
         {
 
             count_up(ADMIN_TYPE, hour, day);
             threads[i] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)admin_function, (PVOID)i, 0, &thread_id);
         }
-        else if (i % 2 == 0)
+        else if (thread_type % 2 == 0)
         {
 
             count_up(WRITER_TYPE, hour, day);
