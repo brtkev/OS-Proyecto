@@ -47,9 +47,9 @@ process_runner();
 // Destroy the semaphores
 destroy_locks();
 ```
-1. inicializa los semaforos
-2. corre los procesos
-3. cierra los semaforos
+1. Inicializa los semáforos
+2. Corre los procesos
+3. Cierra los semáforos
 
 _start_locks()_ y _destroy_locks()_ se importan de [lock.h](./ejercicio_1/lock.h)
 ```c 
@@ -60,33 +60,88 @@ _start_locks()_ y _destroy_locks()_ se importan de [lock.h](./ejercicio_1/lock.h
 ```
 
 ### Implementación De Los Semáforos
+#### lock.c
 ```c
-//lock.c
 #include <windows.h>
 #include <stdio.h>
 
-// Create two semaphores: one for admins and one for writers.
 HANDLE writer_semaphore;
 HANDLE admin_semaphore;
 int num_readers = 0;
 
 void start_locks(){
-    // Initialize the semaphores.
     printf("SET - Initialize the semaphores\n");
     writer_semaphore = CreateSemaphore(NULL, 1, 1, NULL);
     admin_semaphore = CreateSemaphore(NULL, 1, 1, NULL);
 }
 
 void destroy_locks(){
-    // Destroy the semaphores
     printf("SET - destroy the semaphores\n");
     CloseHandle(writer_semaphore);
     CloseHandle(admin_semaphore);
 }
 ```
-HANDLE es una varible utilizada por windows.h, esta variable puede ser usada para diferentes cosas, 2 de ellas son: semaforos e hilos.
+ **HANDLE**: Varible utilizada por windows.h. Esta variable puede ser usada para diferentes cosas, 2 de ellas son: semáforos e hilos.
+    En este caso declaramos 2 semáforos, admin con 1 recurso y writer ( escritor ) con 1 recurso
 
-En este caso declaramos 2 semaforos, admin con 1 recurso y writer ( escritor ) con 1 recurso 
+* **start_locks/destroy_locks**: Funciones encargadas de inicializar y destruir los semáforos respectivamente.
+
+```c
+void reader_lock()
+{
+    num_readers++;
+    console_log(1, "READER - new reader, current number of readers: %d\n",   num_readers);
+    WaitForSingleObject(writer_semaphore, INFINITE);
+    WaitForSingleObject(admin_semaphore, INFINITE);
+    console_log(1,"READER - CRITICAL SECTION\n");
+}
+
+void reader_unlock()
+{
+    num_readers--;
+    console_log(1, "READER - CRITICAL SECTION FIN\n");
+    ReleaseSemaphore(admin_semaphore, 1, NULL);
+    ReleaseSemaphore(writer_semaphore, 1, NULL);
+}
+```
+* **reader_lock**: Aumenta el contador *num_readers*, coloca en wait los semáforos de escritor y admin y finalmente entra en la sección critica.
+
+* **reader_unlock**: Decrementa el contador *num_readers*, sale de la sección crítica y manda signal a los semáforos de escritor y admin.
+
+```c
+void writer_lock()
+{
+    console_log(1, "WRITER - new writer\n");
+    WaitForSingleObject(writer_semaphore, INFINITE);
+    WaitForSingleObject(admin_semaphore, INFINITE);
+    console_log(1, "WRITER - Critic section\n");
+}
+
+void writer_unlock()
+{
+    console_log(1, "WRITER - Critic section FIN\n");
+    ReleaseSemaphore(admin_semaphore, 1, NULL);
+    ReleaseSemaphore(writer_semaphore, 1, NULL);
+}
+```
+* **writer_lock**: Coloca en wait los semáforos de escritor y admin y finalmente entra en la sección critica.
+
+* **writer_unlock**: Sale de la sección crítica y manda signal a los semáforos de escritor y admin.
+```c
+void admin_lock(){
+    console_log(1, "ADMIN - new admin\n");
+    WaitForSingleObject(admin_semaphore, INFINITE);
+
+}
+
+void admin_unlock(){
+    console_log(1 ,"ADMIN - CRITICAL SECTION FIN\n");
+    ReleaseSemaphore(admin_semaphore, 1, NULL);
+}
+```
+* **admin_lock**: Coloca en wait el semáforo del admin y entra a la sección crítica
+
+* **admin_unlock**: Sale de la sección crítica y manda signal al semáforo del admin
 
 ### Implementación De Los Contadores
 
@@ -181,6 +236,41 @@ int get_count_by_type_and_day(int type, int day){
 * **get_count_by_type_and_day**: Retorna la cuenta de cada tipo y cada día.
 
 ```c
+void show_horas_pico()
+{
+    char * opcional;
+    printf("Presione ENTER para continuar con las horas pico.");
+    scanf("%c", &opcional);
+    printf("5. Horas pico por dia\n");
+    for (int day = 0; day < MAX_DAYS; ++day)
+    {
+        printf("    dia %d\n", day + 1);
+
+        printf("        tipo lector:\n");
+        show_counter_by_type_and_day_and_hour(day, READER_TYPE);
+
+        printf("        tipo escritor:\n");
+        show_counter_by_type_and_day_and_hour(day, WRITER_TYPE);
+
+        printf("        tipo admin:\n");
+        show_counter_by_type_and_day_and_hour(day, ADMIN_TYPE);
+    }
+}
+
+void show_counter_by_type_and_day_and_hour(int day, int type)
+{
+    int sum = get_count_by_type_and_day(type, day);
+    int media = sum / MAX_DAYS;
+    for (int hour = 0; hour < MAX_HOURS; ++hour)
+    {
+        printf("            hora %d con %d operaciones.\n", hour + 1, counter[day][hour][type]);
+        if (counter[day][hour][type] > media * 2)
+        {
+            printf("                hora %d es una hora pico\n\n", hour + 1);
+        }
+    }
+}
+
 void show_counters(){
     printf("1. numero total de operaciones : %d\n", get_full_count());
 
@@ -203,8 +293,104 @@ void show_counters(){
     }
 
 }
-```
-* **show_counters**: Imprime en pantalla los resultados de las funciones previamente comentadas.
 
-### implementacion de el logger
-https://www.ozzu.com/wiki/504927/writing-a-custom-printf-wrapper-function-in-c
+void show_counter_by_type_and_day()
+{
+    char * opcional;
+    printf("Presione ENTER para continuar con las operaciones por tipo y por dia.");
+    scanf("%c",  &opcional);
+    printf("4. numero total de operaciones por tipo y por dia\n");
+    for (int day = 0; day < MAX_DAYS; ++day)
+    {
+        int reader = get_count_by_type_and_day(READER_TYPE, day),
+        writer = get_count_by_type_and_day(WRITER_TYPE, day),
+        admin = get_count_by_type_and_day(ADMIN_TYPE, day);
+
+        printf("    dia %d: %d operaciones\n", day + 1, reader + writer + admin);
+        printf("        operaciones por reader: %d\n", reader);
+        printf("        operaciones por writer: %d\n", writer);
+        printf("        operaciones por admin: %d\n", admin);
+    }
+}
+```
+* **show_horas_pico**: Imprime en pantalla los resultados de las horas pico por día.
+* **show_counter_by_type_and_day_and_hour**: Imprime en pantalla los resultados por tipo, día y hora.
+* **show_counters**: Imprime en pantalla los resultados de las funciones previamente comentadas.
+* **show_counter_by_type_and_day**: Imprime en pantalla los resultados por tipo y día.
+
+### Implementación Del Logger
+
+#### logger.c
+
+```c
+int hide_logs = 0;
+int use_file = 0;
+int skip_logs = 0;
+```
+
+* **hide_logs**: Variable encargada de determinar si saltar los registros (se necesita que la variable *hiddeable se encuentre en 1*, ya que estas trabajan en conjunto).
+* **use_file**: Variable encargada de determinar si el log se escribirá en un archivo.
+* **skip_logs**: Variable encargada de determinar si saltar los registros.
+
+```c
+void console_log(  int hiddeable, char* format, ... ) {
+    if(skip_logs){
+        return;
+    }
+
+    if(hiddeable && hide_logs){
+        return;
+    }
+
+    va_list args;
+    va_start( args, format );
+
+    if(use_file){
+        FILE *f;
+        f = fopen("1.log", "a+");
+        if (f == NULL) { 
+            /* Something is wrong   */
+            return;
+        }
+        vfprintf(f, format, args);
+
+        fclose(f);
+
+    }else{
+        vprintf( format, args );
+
+    }
+
+    va_end( args );
+
+}
+```
+* **console_log**: Función encargada de imprimir en pantalla los registros. En caso tal de que la variable *skip_logs* ó *hiddeable* en conjunto con *hide_logs*, ningún registro se mostrará.
+    En el caso de que la variable *use_file* se encuntre en verdadero, se creará y escribirá dentro del archivo 1.log los mensajes con sus correspondientes argumentos. Caso contrario, se imprimirán en pantalla
+    
+```c
+int set_variable( int status, int *variable ){
+    if(status > 1 || status < 0){
+        return 1;
+    }
+
+    *variable = status;
+}
+
+int set_hide_logs(int status){
+    set_variable(status, &hide_logs);
+}
+
+int set_use_file(int status){
+    set_variable(status, &use_file);
+}
+
+int set_skip_logs( int status){
+    set_variable(status, &skip_logs);
+}
+```
+
+* **set_variable**: Función encargada de asignar un estado ingresando a una variable y el estado el cual se desea asignar a la variable
+
+* **set_hide_logs/set_use_file/set_skip_logs**: Funciones encargadas de modificar el estado de las variables *hide_logs*, *use_file* y *skip_logs* respectivamente
+
