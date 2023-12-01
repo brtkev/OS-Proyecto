@@ -25,28 +25,30 @@ void process_runner()
     }
     
     //arreglo de pointers
-    struct Player *players[thread_count];
+    struct Player *players[NUM_PLAYERS];
     
     int vuelta = 0;
     for (int i = 1; i < thread_count; i++)
     {   
         
         DWORD thread_id;
-        struct Player player;
+        int player_i = i - 1;
 
         if(vuelta == 0 ){
             //nuevo player
-            player.id = i * 2;
-            player.score = 0;
-            player.n_cartones = get_random_number_from_1_to_10();
+            // struct Player new_player;
+            players[player_i] = (struct Player*)malloc(sizeof(struct Player));
+            players[player_i]->id = i;
+            players[player_i]->score = 0;
+            players[player_i]->current_number_count = 0;
+            players[player_i]->n_cartones = get_random_number_from_1_to_10();
 
-            players[i] = &player;
         }
 
-        printf("creating thread %d\n", players[i]->id);
-        threads[i] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)player_function, (PVOID)&player, 0, &thread_id);
-        printf("created thread %d\n", players[i]->id);
-        
+        printf("creating thread %d\n", players[player_i]->id);
+        threads[i] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)player_function, (PVOID)players[player_i], 0, &thread_id);
+        printf("created thread %d\n", players[player_i]->id);
+
         if (threads[i] == NULL)
 
         {
@@ -58,6 +60,9 @@ void process_runner()
     }
 
     WaitForMultipleObjects(thread_count, threads, TRUE, INFINITE);
+    for( int i = 0 ; i < NUM_PLAYERS; ++i){
+        free(players[i]);
+    }
 }
 
 int main()
