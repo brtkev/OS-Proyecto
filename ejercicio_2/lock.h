@@ -1,6 +1,6 @@
 #pragma once
 #include <windows.h>
-#define NUM_PLAYERS 10
+#define NUM_PLAYERS 7
 #define MAX_CARTONES 10
 #define BINGO 15
 #define NUMBERS_CARTON 0

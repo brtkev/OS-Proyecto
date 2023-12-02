@@ -7,6 +7,73 @@
 void process_runner(int number_vector[BINGO_MAX_NUMBER], struct Player *players[NUM_PLAYERS]);
 void bingo_runner();
 
+void show_count(struct Player *players[NUM_PLAYERS], int recaudado)
+{
+    printf("\nya no quedan suficientes jugadores, Se Acabo el Bingo.\n");
+    printf("1. fichas recaudadas: %d\n  monedas reacudadas en total: %d\n", recaudado, recaudado * 10);
+
+    printf("\n2. Número de cartones ganadores por jugador y en total\n");
+    int sum = 0;
+    int most_winners = 0;
+    int less_winners = 10000;
+
+    for (int i = 0; i < NUM_PLAYERS; i++)
+    {
+        printf("    player %d, cartones ganadores: %d\n", players[i]->id, players[i]->cartones_ganadores);
+        sum += players[i]->cartones_ganadores;
+        if (players[i]->cartones_ganadores > most_winners)
+        {
+            most_winners = players[i]->cartones_ganadores;
+        }
+        if (players[i]->cartones_ganadores < less_winners)
+        {
+            less_winners = players[i]->cartones_ganadores;
+        }
+    }
+    printf("    total: %d\n", sum);
+
+    int id_most_winners[NUM_PLAYERS];
+    int id_less_winners[NUM_PLAYERS];
+    for (int i = 0; i < NUM_PLAYERS; i++)
+    {
+        if (players[i]->cartones_ganadores == most_winners)
+        {
+            id_most_winners[i] = players[i]->id;
+        }
+        else
+        {
+            id_most_winners[i] = 0;
+        }
+        
+        if (players[i]->cartones_ganadores == less_winners)
+        {
+            id_less_winners[i] = players[i]->id;
+        }
+        else
+        {
+            id_less_winners[i] = 0;
+        }
+    }
+
+    printf("\n3. jugador(es) con mas bingos ganados: \n");
+    for (int i = 0; i < NUM_PLAYERS; i++)
+    {
+        if (id_most_winners[i] != 0)
+        {
+            printf("    player %d con %d bingos\n", id_most_winners[i], most_winners);
+        }
+    }
+
+    printf("\n4. jugador(es) con menos bingos ganados:\n");
+    for (int i = 0; i < NUM_PLAYERS; i++)
+    {
+        if (id_less_winners[i] != 0)
+        {
+            printf("    player %d con %d bingos\n", id_less_winners[i], less_winners);
+        }
+    }
+}
+
 void bingo_runner()
 {
     int recaudado = 0;
@@ -14,8 +81,6 @@ void bingo_runner()
     init_players(players);
 
     int number_vector[BINGO_MAX_NUMBER];
-
-    printf("b4 get");
 
     while (1)
     {
@@ -46,8 +111,7 @@ void bingo_runner()
 
         if (n_current_players < 2)
         {
-            printf("\nya no quedan suficientes jugadores, Se Acabo el Bingo.\n");
-
+            show_count(players, recaudado);
 
             break;
         }
@@ -57,9 +121,18 @@ void bingo_runner()
         process_runner(number_vector, players);
         destroy_locks();
 
+        
         int winner = get_winner();
-        players[winner]->cartera += round_accumulation * 0.9;
+        players[winner - 1]->cartera += round_accumulation * 0.9;
         recaudado += round_accumulation * 0.1;
+        printf("ganador de la ultima ronda: player %d\n", winner);
+        printf("ganancias del ganador %f\n", round_accumulation * 0.9);
+        printf("ganancias del bingo %f\n", round_accumulation * 0.1);
+
+        char c;
+        printf("Presione Enter Para la siguiente ronda de Bingo!\n");
+        scanf("%c", &c);
+
     }
 
     for (int i = 0; i < NUM_PLAYERS; ++i)

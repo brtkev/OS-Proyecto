@@ -358,7 +358,7 @@ void init_players(struct Player *players[NUM_PLAYERS])
         // nuevo player
         //  struct Player new_player;
         players[i] = (struct Player *)malloc(sizeof(struct Player));
-        players[i]->id = i;
+        players[i]->id = i + 1;
         players[i]->cartones_ganadores = 0;
         players[i]->cartera = 100;
     }
