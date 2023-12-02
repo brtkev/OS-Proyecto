@@ -14,50 +14,7 @@ Para compilar y ejecutar el ejercicio 1, debemos ejecutar en el terminal los sig
     ./1
 ```
 
-### Explicación
-
-dentro del archivo [Makefile](./Makefile) encontraremos 2 funciones
-
-```make
-EJ_1_FILES= ejercicio_1/*.c
-...
-1: 1.exe
-	echo "make 1.exe"
-
-1.exe: $(EJ_1_FILES)
-	gcc $(CFLAG) -o $@ $(EJ_1_FILES)
-```
-
-la funcion "1", llama a la funcion "1.exe" y luego ejecuta el echo
-
-la funcion "1.exe", llama a EJ_1_FILES, los cuales son todos los archivos .c del directorio [ejercicio 1](./ejercicio_1), con estos objetos dentro de la funcion, luego se compilan usando el comando gcc con la bandera -o y se usa el nombre de la funcion (1.exe) utilizando $@
-
 ## 2. Ejecución
-
-Primero se ejecuta _main()_ dentro [main.c](./ejercicio_1/main.c)
-
-esta funcion hace 3 cosas:
-```c
-//main.c
-// Initialize the semaphores.
-start_locks();
-
-process_runner();
-
-// Destroy the semaphores
-destroy_locks();
-```
-1. Inicializa los semáforos
-2. Corre los procesos
-3. Cierra los semáforos
-
-_start_locks()_ y _destroy_locks()_ se importan de [lock.h](./ejercicio_1/lock.h)
-```c 
-//main.c
-#include <stdio.h>
-#include "lock.h"
-#include <windows.h>
-```
 
 ### Implementación De Los Semáforos
 #### lock.c
@@ -425,7 +382,7 @@ DWORD WINAPI admin_function(DWORD i)
     admin_unlock();
 }
 ```
-* **reader_function/writer_function/admin_function**: Cada una de estas funciones ejecuta su respectivo *lock*, un *console_log* para indicar que está en si sección crítica y finalmente se ejecuta su *unlock*.
+* **reader_function/writer_function/admin_function**: Cada una de estas funciones ejecuta su respectivo *lock*, un *console_log* para indicar que está en su sección crítica y finalmente se ejecuta su *unlock*.
 
 ```c
 void process_runner(int hour, int day)
@@ -556,8 +513,674 @@ int main(int argc, int *argv[])
 * **main**: Primeramente iniciamos la semilla para los números aleatorios. Posteriormente usamos la función *strtol* para tomar y convertir nuestro input a un tipo de dato *long*. Estos se imprimirán en pantalla dependiendo de cuántos argumentos hayamos escrito.
 \
 Ulteriormente se pide que el usuario presione enter para ejecutar las funciones *start_locks* y *daily_runner*. Una vez terminadas se ejecutaría *destroy_locks* y se mostraría en pantalla los contadores con la función *show_counters*
-    
 
+# Ejercicio 2
+
+## 1. Make File
+Para compilar y ejecutar el ejercicio 2, debemos ejecutar en el terminal los siguientes pasos:
+
+
+```shell
+    make 2
+    ./2
+```
+## 2. Ejecución
+
+### Implementación Del BIngo
+
+#### lock.h
+```c
+#define NUM_PLAYERS 10
+#define MAX_CARTONES 10
+#define BINGO 15
+#define NUMBERS_CARTON 0
+#define BINGO_CARTON 1
+#define BINñGO_MAX_NUMBER 90
+
+
+struct Player
+{
+    /* data */
+    int id, 
+        cartones_ganadores,
+        n_cartones, 
+        current_number_count;
+    int cartones[MAX_CARTONES][BINGO][2];
+    int cartones_winner_count[MAX_CARTONES];
+
+    float cartera;
+};
+```
+* **NUM_PLAYERS**: Tipo número máximo de jugadores.
+* **MAX_CARTONES**: Tipo número máximo de cartones
+* **BINGO**: Tipo número de valores por cartón
+* **NUMBERS_CARTON**: Cartón de números.
+* **BINGO_CARTON**: Cartón de bingo (donde se tachará en caso tal de hacer match con lo que diga el host)
+* **BINGO_MAX_NUMBER**: Rango de los valores que puede tomar cada casilla del cartón de números (empieza desde 1)
+* **Player**: Tipo de dato jugador.
+    * **id**: Identificador del jugador
+    * **cartones_ganadores**: Cantidad de cartones ganadores.
+    * **n_cartones**: Cantidad de cartones que posee en una partida.
+    * **current_number_count**: Cantidad de números que ha dicho el host y el jugador ha anotado.
+    * **cartones**: La cantidad de cartones x los 15 dijitos que trae un bingo x los dos tipos de cartones que estamos manejando (número y bingo).
+    * **cartones_winner_count**: La cantidad de números anotados que lleva en cada cartón. Por eso tiene el mismo tamaño que MAX_CARTONES.
+    * **cartera**: Cantidad de fichas que posee el jugador.
+
+#### lock.c
+```c
+HANDLE host_semaphore;
+HANDLE player_semaphore;
+HANDLE bingo_semaphore;
+
+int num_players_ready;
+int winner;
+int current_number;
+int current_number_count;
+int current_players;
+```
+
+* **host_semaphore**: Semáforo para el host.
+* **player_semaphore**: Semáforo para los jugadores.
+* **bingo_semaphore**: Semáforo para el bingo.
+* **num_players_ready**: Número de jugadores listos para jugar.
+* **winner**: Bandera ganador. Toma el id del ganador. 0 = no hay ganador aún.
+* **current_number**: Número actual que ha dicho el host.
+* **current_number_count**: La cantidad de números que ha dicho el host.
+* **current_players**: La cantidad actual de jugadores.
+
+```c
+void set_current_players(int n){
+    current_players = n;
+}
+
+void start_locks()
+{
+    printf("SET - Initialize the semaphores\n");
+    host_semaphore = CreateSemaphore(NULL, 0, 1, NULL);
+    player_semaphore = CreateSemaphore(NULL, 1, 1, NULL);
+    bingo_semaphore = CreateSemaphore(NULL, 1, 1, NULL);
+    num_players_ready = 0;
+    current_number_count = 0;
+    winner = 0;
+}
+
+void destroy_locks()
+{
+    printf("SET - destroy the semaphores\n");
+    CloseHandle(host_semaphore);
+    CloseHandle(player_semaphore);
+    CloseHandle(bingo_semaphore);
+}
+```
+* **set_current_players**: Asigna la cantidad actual de jugadores.
+* **start_locks**: Inicializa los semáforos.
+* **destroy_locks**: Destruye los semáforos.
+
+```c
+void player_function(struct Player *player_ptr)
+{
+    if(player_ptr->n_cartones == 0){
+        return;
+    }
+    time_t t = player_ptr->id * 3.1415;
+    srand((unsigned)time(&t));
+
+    printf("player id %d\n", player_ptr->id);
+
+    printf("player %d is getting %d cartons\n", player_ptr->id, player_ptr->n_cartones);
+
+    printf("player %d got his %d cartons filled\n", player_ptr->id, player_ptr->n_cartones);
+    ++num_players_ready;
+
+    for (winner; winner == 0; winner)
+    {
+        WaitForSingleObject(player_semaphore, INFINITE);
+
+        if (player_ptr->current_number_count < current_number_count)
+        {
+
+            ++player_ptr->current_number_count;
+
+            printf("player %d esta leyendo sus cartones buscando el numero %d\n", player_ptr->id, current_number);
+
+            if (is_bingo_in_player(player_ptr) == 1)
+            {
+                printf("player %d tiene bingo\n", player_ptr->id);
+                WaitForSingleObject(bingo_semaphore, INFINITE);
+                if (winner == 0)
+                {
+                    printf("\n--- player %d avisa que tiene bingo ---\n", player_ptr->id);
+                    checkout_player_bingo(player_ptr);
+                    player_ptr->cartones_ganadores++;
+                    winner = player_ptr->id;
+                }
+                ReleaseSemaphore(bingo_semaphore, 1, NULL);
+            }
+
+            ++num_players_ready;
+            printf("player %d esta listo, el numero de jugadores que estan listos es %d\n", player_ptr->id, num_players_ready);
+        }
+
+        if (num_players_ready == current_players)
+        {
+            printf("player %d avisa al host que todos los jugadores estan listos\n", player_ptr->id);
+            ReleaseSemaphore(host_semaphore, 1, NULL);
+        }
+        ReleaseSemaphore(player_semaphore, 1, NULL);
+    }
+
+    ReleaseSemaphore(host_semaphore, 1, NULL);
+    printf("player %d termino de jugar\n", player_ptr->id);
+}
+```
+* **player_function**: Verifica si el jugador tiene cartones, si tiene cartones, entonces juega. Espera a que los jugadores estén listos para jugar. Espera a que el host libere un número, una vez liberado se lee por todos los jugadores. Si algun jugador tiene **bingo** lo notifica, sino esperan al siguiente número del host.
+
+```c
+void fill_player_cartones(struct Player *player)
+{
+    for (int carton = 0; carton < player->n_cartones; ++carton)
+    {
+        for (int space = 0; space < BINGO; ++space)
+        {
+            int new_number = get_random_number(1, BINGO_MAX_NUMBER);
+
+            if (number_not_in_carton(player, carton, new_number) != 1)
+            {
+                --space;
+                continue;
+            }
+
+            player->cartones[carton][space][NUMBERS_CARTON] = new_number;
+            player->cartones[carton][space][BINGO_CARTON] = 0;
+        }
+        player->cartones_winner_count[carton] = 0;
+    }
+}
+
+int number_not_in_carton(struct Player *p, int carton, int number)
+{
+    for (int i = 0; i < BINGO; ++i)
+    {
+        if (p->cartones[carton][i][NUMBERS_CARTON] == number)
+        {
+            return 0;
+        }
+    }
+    return 1;
+}
+```
+* **fill_player_cartones**: Llena todos los cartones de números para cada jugador.
+* **number_not_in_carton**: Verifica si el número existe en el cartón.
+
+```c
+int is_bingo_in_player(struct Player *player)
+{
+    for (int carton = 0; carton < player->n_cartones; ++carton)
+    {
+        if (is_bingo_in_carton(player, carton) == 1)
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int is_bingo_in_carton(struct Player *player, int carton)
+{
+    for (int number_position = 0; number_position < BINGO; ++number_position)
+    {
+
+        if (is_bingo(player, carton, number_position) == 1)
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int is_bingo(struct Player *player, int carton, int number_position)
+{
+    if (current_number == player->cartones[carton][number_position][NUMBERS_CARTON])
+    {
+        if (player->cartones[carton][number_position][BINGO_CARTON] == 1)
+        {
+            return 0;
+        }
+
+        ++player->cartones_winner_count[carton];
+        player->cartones[carton][number_position][BINGO_CARTON] = 1;
+
+        if (player->cartones_winner_count[carton] == BINGO)
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+```
+* **is_bingo_in_player**: Verifica si el jugador tiene bingo.
+* **is_bingo_in_carton**: Verifica si el cartón especifico al que está llamando tiene bingo.
+* **is_bingo**: Verifica que el cartón actual del jugador actual está consiguiendo un bingo o no.
+
+```c
+void host_function(int number_vector[BINGO_MAX_NUMBER])
+{
+    for (winner; winner == 0; winner)
+    {
+        int new_number = number_vector[current_number_count];
+
+        printf("el host tiene un numero nuevo, esperando a que todos los jugadores esten listos\n");
+        WaitForSingleObject(host_semaphore, INFINITE);
+        WaitForSingleObject(player_semaphore, INFINITE);
+
+        if (winner != 0)
+        {
+            printf("\n\nBINGO BY PLAYER %d\n\n", winner);
+        }
+        else
+        {
+            printf("el nuevo numero es %d\n", new_number);
+            current_number = new_number;
+            current_number_count++;
+
+            num_players_ready = 0;
+            ReleaseSemaphore(player_semaphore, 1, NULL);
+        }
+    }
+
+
+    printf("host cierra el bingo en el numero %d\n", current_number_count);
+    ReleaseSemaphore(player_semaphore, 1, NULL);
+}
+```
+* **host_function**: Espera a que todos los jugadores estén listos. Toma un número del vector de números, asignándolo a *new_number*. En caso tal de que haya un ganador, no dice el siguiente número. Caso contrario, sigue diciendo números mientras todos los jugadores estén listos.
+
+```c
+int get_random_number(int from, int to)
+{
+    int delta = 100;
+    if (from > to)
+        return -1;
+
+    int new_number = rand() % delta;
+    for (new_number; new_number > to || new_number < from; new_number = rand() % delta)
+        ;
+
+    return new_number;
+}
+
+int get_random_number_from_1_to_10()
+{
+    int new_number = rand() % 10;
+
+    if (new_number == 0)
+    {
+        new_number = 10;
+    }
+
+    return new_number;
+}
+```
+* **get_random_number**: Retorna un número aleatorio entre *from* (que actúa como mínimo) y *to* (que actúa como un máximo).
+* **get_random_number_from_1_to_10**: Retorna un número aleatorio entre el 1 y el 10.
+
+```c
+void checkout_player_bingo(struct Player *p)
+{
+    printf("player %d con %d cartones\n\n", p->id, p->n_cartones);
+    for (int i = 0; i < p->n_cartones; ++i)
+    {
+        for (int j = 0; j < BINGO; ++j)
+        {
+            printf("carton %d, espacio %d, valor %d \n", i, j, p->cartones[i][j][NUMBERS_CARTON]);
+            printf("carton %d, espacio %d, status %d \n", i, j, p->cartones[i][j][BINGO_CARTON]);
+        }
+        printf("carton %d, winners %d\n\n", i, p->cartones_winner_count[i]);
+    }
+}
+
+void checkout_player_carton(struct Player *p, int carton)
+{
+    for (int i = 0; i < BINGO; ++i)
+    {
+        printf("player %d, carton %d, espacio %d, valor %d \n", p->id, carton, i, p->cartones[carton][i][NUMBERS_CARTON]);
+        printf("player %d, carton %d, espacio %d, status %d \n", p->id, carton, i, p->cartones[carton][i][BINGO_CARTON]);
+    }
+    printf("player %d, carton %d, winners %d\n\n", p->id, carton, p->cartones_winner_count[carton]);
+}
+```
+* **checkout_player_bingo**: Imprime en pantalla todos los cartones del jugador que tiene bingo.
+* **checkout_player_carton**: Imprime en pantalla el cartón del jugador a especificar.
+
+```c
+int number_not_in_vector(int vector[], int size, int number)
+{
+    for (int i = 0; i < size; ++i)
+    {
+        if (vector[i] == number)
+        {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+void get_random_number_vector(int number_vector[BINGO_MAX_NUMBER])
+{
+    int tries = 0;
+    for (int i = 0; i < BINGO_MAX_NUMBER; ++i)
+    {
+        tries++;
+        if (tries > 300)
+        {
+            printf("%d intentos de numeros random, rellenando vector...\n", tries);
+            break;
+        }
+
+        int new_number = get_random_number(1, BINGO_MAX_NUMBER);
+
+        if (number_not_in_vector(number_vector, BINGO_MAX_NUMBER, new_number) != 1)
+        {
+            --i;
+            continue;
+        }
+
+        number_vector[i] = new_number;
+    }
+
+    if (tries > 300)
+    {
+        for (int i = 1; i <= BINGO_MAX_NUMBER; ++i)
+        {
+            int new_number = i;
+            if (number_not_in_vector(number_vector, BINGO_MAX_NUMBER, new_number) != 1)
+            {
+                continue;
+            }else{
+                for( int j = 0; j < BINGO_MAX_NUMBER; j++ ){
+                    if(number_vector[j] == 0){
+                        number_vector[j] = new_number;
+                    }
+                }
+            }
+        }
+    }
+}
+
+void reset_random_number_vector(int number_vector[BINGO_MAX_NUMBER])
+{
+    for (int i = 0; i < BINGO_MAX_NUMBER; ++i)
+    {
+        number_vector[i] = 0;
+    }
+}
+```
+* **number_not_in_vector**: Verifica si el vector no tiene el número especificado.
+* **get_random_number_vector**: Trata de llenar el vector con números aleatorios entre 1 y 90 en menos de 300 intentos. Si se pasa, se rellenan los espacios faltantes de una manera más secuencial con los números que falten.
+* **reset_random_number_vector**: Reinicia el valor en la posición *i* en el vector, asignándole 0.
+
+```c
+void init_players(struct Player *players[NUM_PLAYERS])
+{
+    for (int i = 0; i < NUM_PLAYERS; i++)
+    {
+        players[i] = (struct Player *)malloc(sizeof(struct Player));
+        players[i]->id = i;
+        players[i]->cartones_ganadores = 0;
+        players[i]->cartera = 100;
+    }
+}
+
+void prepare_players(struct Player *players[NUM_PLAYERS])
+{
+    for (int i = 0; i < NUM_PLAYERS; i++)
+    {
+        empty_player_cartones(players[i]);
+
+        players[i]->current_number_count = 0;
+        
+        players[i]->n_cartones = get_random_number_from_1_to_10();
+
+        int deduction = players[i]->n_cartones * 5;
+        if( players[i]->cartera - deduction < 0){
+
+            
+            if(players[i]->cartera < 5){
+                players[i]->n_cartones = 0;
+                continue;
+
+            }else{
+                players[i]->n_cartones = 1;
+                
+            }
+
+        }
+
+        fill_player_cartones(players[i]);
+    }
+}
+
+void empty_player_cartones(struct Player *player)
+{
+    // llenar cartones
+    for (int carton = 0; carton < player->n_cartones; ++carton)
+    {
+        for (int space = 0; space < BINGO; ++space)
+        {
+            player->cartones[carton][space][NUMBERS_CARTON] = 0;
+        }
+    }
+}
+
+int get_winner()
+{
+    return winner;
+}
+```
+* **init_players**: Crea todos los jugadores.
+* **prepare_players**: Prepara los jugadores para la partida.
+* **empty_player_cartones**: Vacía los cartones de los jugadores.
+* **get_winner**: Retorna el id del ganador.
+
+### Procesos del Bingo
+
+#### main.c
+
+```c
+void show_count(struct Player *players[NUM_PLAYERS], int recaudado)
+{
+    printf("\nya no quedan suficientes jugadores, Se Acabo el Bingo.\n");
+    printf("1. fichas recaudadas: %d\n  monedas reacudadas en total: %d\n", recaudado, recaudado * 10);
+
+    printf("\n2. Número de cartones ganadores por jugador y en total\n");
+    int sum = 0;
+    int most_winners = 0;
+    int less_winners = 10000;
+
+    for (int i = 0; i < NUM_PLAYERS; i++)
+    {
+        printf("    player %d, cartones ganadores: %d\n", players[i]->id, players[i]->cartones_ganadores);
+        sum += players[i]->cartones_ganadores;
+        if (players[i]->cartones_ganadores > most_winners)
+        {
+            most_winners = players[i]->cartones_ganadores;
+        }
+        if (players[i]->cartones_ganadores < less_winners)
+        {
+            less_winners = players[i]->cartones_ganadores;
+        }
+    }
+    printf("    total: %d\n", sum);
+
+    int id_most_winners[NUM_PLAYERS];
+    int id_less_winners[NUM_PLAYERS];
+    for (int i = 0; i < NUM_PLAYERS; i++)
+    {
+        if (players[i]->cartones_ganadores == most_winners)
+        {
+            id_most_winners[i] = players[i]->id;
+        }
+        else
+        {
+            id_most_winners[i] = 0;
+        }
+        
+        if (players[i]->cartones_ganadores == less_winners)
+        {
+            id_less_winners[i] = players[i]->id;
+        }
+        else
+        {
+            id_less_winners[i] = 0;
+        }
+    }
+
+    printf("\n3. jugador(es) con mas bingos ganados: \n");
+    for (int i = 0; i < NUM_PLAYERS; i++)
+    {
+        if (id_most_winners[i] != 0)
+        {
+            printf("    player %d con %d bingos\n", id_most_winners[i], most_winners);
+        }
+    }
+
+    printf("\n4. jugador(es) con menos bingos ganados:\n");
+    for (int i = 0; i < NUM_PLAYERS; i++)
+    {
+        if (id_less_winners[i] != 0)
+        {
+            printf("    player %d con %d bingos\n", id_less_winners[i], less_winners);
+        }
+    }
+}
+```
+* **show_count**: Muestra las cuentas en pantalla cuando cierra el bingo.
+
+```c
+void bingo_runner()
+{
+    int recaudado = 0;
+    struct Player *players[NUM_PLAYERS];
+    init_players(players);
+
+    int number_vector[BINGO_MAX_NUMBER];
+
+    while (1)
+    {
+        int round_accumulation = 0;
+        reset_random_number_vector(number_vector);
+        get_random_number_vector(number_vector);
+
+        printf("number vector created\n");
+
+        prepare_players(players);
+
+        int n_current_players = 0;
+        for (int i = 0; i < NUM_PLAYERS; i++)
+        {
+            if (players[i]->n_cartones > 0)
+            {
+                n_current_players++;
+                int player_deduction = players[i]->n_cartones * 5;
+                round_accumulation += player_deduction;
+                players[i]->cartera -= player_deduction;
+            }
+        }
+
+        if (n_current_players < 2)
+        {
+            show_count(players, recaudado);
+
+            break;
+        }
+
+        set_current_players(n_current_players);
+        start_locks();
+        process_runner(number_vector, players);
+        destroy_locks();
+
+        
+        int winner = get_winner();
+        players[winner - 1]->cartera += round_accumulation * 0.9;
+        recaudado += round_accumulation * 0.1;
+        printf("ganador de la ultima ronda: player %d\n", winner);
+        printf("ganancias del ganador %f\n", round_accumulation * 0.9);
+        printf("ganancias del bingo %f\n", round_accumulation * 0.1);
+
+        char c;
+        printf("Presione Enter Para la siguiente ronda de Bingo!\n");
+        scanf("%c", &c);
+
+    }
+
+    for (int i = 0; i < NUM_PLAYERS; ++i)
+    {
+        free(players[i]);
+    }
+}
+```
+* **bingo_runner**: Ejecuta el bingo hasta que queden menos de 2 jugadores.
+
+```c
+void process_runner(int number_vector[BINGO_MAX_NUMBER], struct Player *players[NUM_PLAYERS])
+{
+    int thread_count = NUM_PLAYERS + 1;
+    HANDLE threads[thread_count];
+    DWORD thread_id;
+
+    printf("thread count %d\n", thread_count);
+
+    printf("creating thread %d\n", 0);
+    threads[0] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)host_function, (PVOID)number_vector, 0, &thread_id);
+
+    if (threads[0] == NULL)
+    {
+
+        ExitProcess(1);
+
+        return;
+    }
+    printf("created thread %d\n", 0);
+
+    for (int i = 1; i < thread_count; i++)
+    {
+        DWORD thread_id;
+        int player_i = i - 1;
+
+        printf("creating thread %d\n", players[player_i]->id);
+        threads[i] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)player_function, (PVOID)players[player_i], 0, &thread_id);
+        printf("created thread %d\n", players[player_i]->id);
+
+        if (threads[i] == NULL)
+
+        {
+            printf("Error creando thread %d\n", i);
+            ExitProcess(1);
+
+            return;
+        }
+    }
+
+    WaitForMultipleObjects(thread_count, threads, TRUE, INFINITE);
+}
+```
+* **process_runner**: Realiza la ejecución de los hilos del bingo.
+
+```c
+int main()
+{
+
+    printf("hello world\n");
+    time_t t1;
+    srand((unsigned)time(&t1));
+
+    bingo_runner();
+
+    return 0;
+}
+```
+
+* **main**: Activa la semilla y llama a *bingo_runner*
 
 
 
