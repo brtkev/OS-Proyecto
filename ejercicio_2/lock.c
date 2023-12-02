@@ -37,20 +37,18 @@ void destroy_locks()
 
 void player_function(struct Player *player_ptr)
 {
-    time_t t = player_ptr->id;
+    time_t t = player_ptr->id * 3.1415;
     srand((unsigned)time(&t));
 
     printf("player id %d\n", player_ptr->id);
 
     printf("player %d is getting %d cartons\n", player_ptr->id, player_ptr->n_cartones);
 
-    fill_player_cartones(player_ptr);
+    //llena el jugador
+    // fill_player_cartones(player_ptr);
 
-    if (player_ptr->id == 2)
-    {
-        // checkout_player_bingo(player_ptr);
-        // return;
-    }
+    //muestra todas las tarjetas del jugador
+    // checkout_player_bingo(player_ptr);
 
     printf("player %d got his %d cartons filled\n", player_ptr->id, player_ptr->n_cartones);
     ++num_players_ready;
@@ -77,6 +75,7 @@ void player_function(struct Player *player_ptr)
                 if (winner == 0)
                 {
                     printf("player %d avisa que tiene bingo\n", player_ptr->id);
+                    checkout_player_bingo(player_ptr);
                     // avisa al gordo que gana
                     winner = player_ptr->id;
                 }
@@ -109,14 +108,30 @@ void fill_player_cartones(struct Player *player)
     {
         for (int space = 0; space < BINGO; ++space)
         {
+            int new_number = get_random_number(1, BINGO_MAX_NUMBER);
 
-            player->cartones[carton][space][NUMBERS_CARTON] = get_random_number(1, BINGO_MAX_NUMBER);
+            // si el numero esta duplicado, reinicia el loop
+            if(number_not_in_carton(player, carton, new_number) != 1){
+                --space;
+                continue;
+            }
+
+            player->cartones[carton][space][NUMBERS_CARTON] = new_number;
             // printf("random number: %d\n", player.cartones[carton][space][NUMBERS_CARTON]);
             player->cartones[carton][space][BINGO_CARTON] = 0;
             // printf("bingo carton: %d\n", player.cartones[carton][space][BINGO_CARTON]);
         }
         player->cartones_winner_count[carton] = 0;
     }
+}
+
+int number_not_in_carton(struct Player * p, int carton, int number){
+    for( int i = 0 ; i < BINGO; ++i){
+        if( p->cartones[carton][i][NUMBERS_CARTON] == number){
+            return 0;
+        }
+    }
+    return 1;
 }
 
 int is_bingo_in_player(struct Player *player)
@@ -128,6 +143,7 @@ int is_bingo_in_player(struct Player *player)
             return 1;
         }
     }
+    return 0;
 }
 
 int is_bingo_in_carton(struct Player *player, int carton)
@@ -140,16 +156,20 @@ int is_bingo_in_carton(struct Player *player, int carton)
             return 1;
         }
     }
+    return 0;
 }
 
 int is_bingo(struct Player *player, int carton, int number_position)
 {
     if (current_number == player->cartones[carton][number_position][NUMBERS_CARTON])
     {
-        if (player->cartones[carton][number_position][BINGO_CARTON] == 1)
+        if (player->cartones[carton][number_position][BINGO_CARTON] == 1){
             return 0;
+        }
 
         ++player->cartones_winner_count[carton];
+        player->cartones[carton][number_position][BINGO_CARTON] = 1;
+
         if (player->cartones_winner_count[carton] == BINGO)
         {
             printf("player %d, carton %d, cantidad de winners %d\n", player->id, carton, player->cartones_winner_count[carton]);
@@ -157,22 +177,21 @@ int is_bingo(struct Player *player, int carton, int number_position)
             return 1;
         }
 
-        player->cartones[carton][number_position][BINGO_CARTON] = 1;
-
-        return 0;
+        
     }
+    return 0;
 }
 
-void host_function(DWORD i)
+void host_function(int number_vector [BINGO_MAX_NUMBER])
 {
-    time_t t = i;
-    srand((unsigned)time(&t));
+    // time_t t = i;
+    // srand((unsigned)time(&t));
 
     // hasta que alguien gane
     for (winner; winner == 0; winner)
     {
-
-        int new_number = get_random_number(1, BINGO_MAX_NUMBER);
+        int new_number = number_vector[current_number_count];
+        // int new_number = get_random_number(1, BINGO_MAX_NUMBER);
 
         printf("el host tiene un numero nuevo, esperando a que todos los jugadores esten listos\n");
         // wait ( que todos los players tengan cartones llenos)
@@ -200,7 +219,8 @@ void host_function(DWORD i)
 
     // reinicia juego
 
-    printf("host cierra el bingo %d\n", i);
+    printf("host cierra el bingo en el numero %d\n", current_number_count);
+    ReleaseSemaphore(player_semaphore, 1, NULL);
 }
 
 int get_random_number(int from, int to)
@@ -250,8 +270,32 @@ void checkout_player_carton(struct Player *p, int carton)
 {
     for (int i = 0; i < BINGO; ++i)
     {
-        printf("carton %d, espacio %d, valor %d \n", carton, i, p->cartones[carton][i][NUMBERS_CARTON]);
-        printf("carton %d, espacio %d, status %d \n", carton, i, p->cartones[carton][i][BINGO_CARTON]);
+        printf("player %d, carton %d, espacio %d, valor %d \n", p->id, carton, i, p->cartones[carton][i][NUMBERS_CARTON]);
+        printf("player %d, carton %d, espacio %d, status %d \n", p->id, carton, i, p->cartones[carton][i][BINGO_CARTON]);
     }
-    printf("carton %d, winners %d\n\n", carton, p->cartones_winner_count[carton]);
+    printf("player %d, carton %d, winners %d\n\n", p->id, carton, p->cartones_winner_count[carton]);
+}
+
+
+int number_not_in_vector(int vector[], int size, int number){
+    for( int i = 0 ; i < size; ++i){
+        if( vector[i] == number){
+            return 0;
+        }
+    }
+    return 1;
+}
+
+void get_random_number_vector( int number_vector [BINGO_MAX_NUMBER]){
+    for( int i = 0; i < BINGO_MAX_NUMBER; ++i){
+        int new_number = get_random_number(1, BINGO_MAX_NUMBER);
+
+        //si el numero esta en el vector reinicia el ciclo actual
+        if ( number_not_in_vector(number_vector, BINGO_MAX_NUMBER, new_number) != 1){
+            --i;
+            continue;
+        }
+
+        number_vector[i] = new_number;
+    }
 }

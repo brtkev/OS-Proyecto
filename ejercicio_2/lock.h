@@ -1,6 +1,6 @@
 #pragma once
 #include <windows.h>
-#define NUM_PLAYERS 2
+#define NUM_PLAYERS 10
 #define MAX_CARTONES 10
 #define BINGO 15
 #define NUMBERS_CARTON 0
@@ -17,16 +17,19 @@ struct Player
     int cartones_winner_count[MAX_CARTONES];
 };
 
+
 void start_locks();
 void destroy_locks();
 
 int get_random_number(int from, int to);
 int get_random_number_from_1_to_10();
 void player_function(struct Player *player_ptr);
-void host_function(DWORD i);
+void host_function(int number_vector [BINGO_MAX_NUMBER]);
 void fill_player_cartones(struct Player *player);
 int is_bingo_in_player(struct Player * player);
 int is_bingo_in_carton(struct Player * player, int carton);
 int is_bingo(struct Player * player, int carton, int number_position);                    
 void checkout_player_bingo(struct Player * p);
 void checkout_player_carton(struct Player *p, int carton);
+int number_not_in_vector(int vector[], int size, int number);
+void get_random_number_vector( int number_vector [BINGO_MAX_NUMBER]);

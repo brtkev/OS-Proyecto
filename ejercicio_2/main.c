@@ -5,6 +5,7 @@
 #include "lock.h"
 
 
+
 void process_runner()
 {
     int thread_count = NUM_PLAYERS + 1;
@@ -13,8 +14,17 @@ void process_runner()
 
     printf("thread count %d\n", thread_count);
 
-    printf("created thread %d\n", 0);
-    threads[0] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)host_function, (PVOID)0, 0, &thread_id);
+    int number_vector[BINGO_MAX_NUMBER];
+    get_random_number_vector(number_vector);
+
+    // mostrar vector
+    printf("number vector created\n");
+    // for(int i = 0; i <BINGO_MAX_NUMBER; i++){
+    //     printf("%d. %d\n", i, number_vector[i]);
+    // }
+    
+    printf("creating thread %d\n", 0);
+    threads[0] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)host_function, (PVOID)number_vector, 0, &thread_id);
 
     if (threads[0] == NULL)
     {
@@ -23,6 +33,7 @@ void process_runner()
 
         return;
     }
+    printf("created thread %d\n", 0);
     
     //arreglo de pointers
     struct Player *players[NUM_PLAYERS];
@@ -42,6 +53,7 @@ void process_runner()
             players[player_i]->score = 0;
             players[player_i]->current_number_count = 0;
             players[player_i]->n_cartones = get_random_number_from_1_to_10();
+            fill_player_cartones(players[player_i]);
 
         }
 
